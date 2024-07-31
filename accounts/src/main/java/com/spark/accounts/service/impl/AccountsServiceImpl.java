@@ -1,16 +1,18 @@
 package com.spark.accounts.service.impl;
 
 import com.spark.accounts.constants.AccountsConstants;
+import com.spark.accounts.dto.AccountsDto;
 import com.spark.accounts.dto.CustomerDto;
 import com.spark.accounts.entity.Accounts;
 import com.spark.accounts.entity.Customer;
 import com.spark.accounts.exception.CustomerAlreadyExistsException;
+import com.spark.accounts.exception.ResourceNotFoundException;
+import com.spark.accounts.mapper.AccountsMapper;
 import com.spark.accounts.mapper.CustomerMapper;
 import com.spark.accounts.repository.AccountsRepository;
 import com.spark.accounts.repository.CustomerRespository;
 import com.spark.accounts.service.IAccountsService;
 import lombok.AllArgsConstructor;
-import org.hibernate.cache.spi.support.CacheUtils;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
@@ -57,4 +59,63 @@ public class AccountsServiceImpl implements IAccountsService {
         newAccount.setBranchAddress(AccountsConstants.ADDRESS);
         return newAccount;
     }
+
+    /**
+     * @param mobileNumber - Input Mobile Number
+     * @return Accounts Details based on a given mobileNumber
+     */
+    @Override
+    public CustomerDto fetchAccountDetails(String mobileNumber) {
+        Customer customer =customerRespository.findByMobileNumber(mobileNumber).orElseThrow(
+                () -> new ResourceNotFoundException("Customer", "mobile number", mobileNumber));
+        Accounts account = accountsRepository.findByCustomerId(customer.getCustomerId()).orElseThrow(
+                () -> new ResourceNotFoundException("Account", "customer id", customer.getCustomerId().toString()));
+
+        CustomerDto customerDto = CustomerMapper.mapToCustomerDto(customer, new CustomerDto());
+        customerDto.setAccountsDto(AccountsMapper.mapToAccountsDto(account, new AccountsDto()));
+
+        return customerDto;
+
+    }
+
+    /**
+     * @param customerDto - CustomerDto Object
+     * @return boolean indicating if the update of Account details is successful or not
+     */
+    @Override
+    public boolean updateAccount(CustomerDto customerDto) {
+        boolean isUpdated = false;
+        AccountsDto accountsDto =  customerDto.getAccountsDto();
+        if(accountsDto != null) {
+            Accounts account = accountsRepository.findById(accountsDto.getAccountNumber()).orElseThrow(
+                    () -> new ResourceNotFoundException("Account", "account number", accountsDto.getAccountNumber().toString())
+            );
+            AccountsMapper.mapToAccounts(accountsDto, account);
+            account = accountsRepository.save(account);
+
+            Long customerId = account.getCustomerId();
+            Customer customer =customerRespository.findById(customerId).orElseThrow(
+                    () -> new ResourceNotFoundException("Customer", "customer id", customerId.toString()));
+            CustomerMapper.mapToCustomer(customerDto, customer);
+            customerRespository.save(customer);
+            isUpdated =true;
+
+        }
+        return isUpdated;
+    }
+
+    /**
+     * @param mobileNumber - Input Mobile Number
+     * @return boolean indicating if the delete of Account details is successful or not
+     */
+    @Override
+    public boolean deleteAccount(String mobileNumber) {
+        Customer customer =customerRespository.findByMobileNumber(mobileNumber).orElseThrow(
+                () -> new ResourceNotFoundException("Customer", "mobile number", mobileNumber));
+
+        accountsRepository.deleteByCustomerId(customer.getCustomerId());
+        customerRespository.deleteById(customer.getCustomerId());
+        return true;
+    }
+
 }
