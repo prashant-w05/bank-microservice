@@ -1,13 +1,8 @@
-spring:
-  config:
-    activate:
-      on-profile: "qa"
-
 build:
   version: "2.0"
 
 accounts:
-  message: "Welcome to spark accounts related QA APIs "
+  message: "Welcome to Spark accounts related QA APIs "
   contactDetails:
     name: "Smitha Ray - QA Lead"
     email: "smitha@mail.com"
