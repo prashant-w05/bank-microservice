@@ -11,8 +11,8 @@ spring:
           #search-locations: classpath:/config
           #search-locations: file:///D://Personal//Study//Projects//config
         git:
-          uri: "https://github.com/prashant4805/config-server.git"
-          default-label: main
+          uri: "https://github.com/prashant-w05/config-server-properties.git"
+          default-label: master
           timeout: 5
           clone-on-start: true
           force-pull: true
